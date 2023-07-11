@@ -17,8 +17,6 @@
 * A [Telegram](https://telegram.org/) bot `API Token`.
 * Google Drive application with `google_private_key`.
 * Google Drive folder with `drive_folder_id`
-* TAAS account with `taas_api_key` (Optional, for advanced mode only)
-* Telegram channel for slides with `slides_chat_id` (Optional)
 
 ## Installation
 
