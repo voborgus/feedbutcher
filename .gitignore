@@ -1,0 +1,22 @@
+# package directories
+node_modules
+jspm_packages
+
+# Serverless directories
+.serverless
+
+# Token file
+serverless.env.yml
+.env.yml
+google.pem
+
+.idea/
+*.iml
+
+build
+
+*.tfstate
+*.tfvars
+*.tfstate.backup
+*.zip
+.terraform/

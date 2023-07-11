@@ -1,0 +1,88 @@
+service: feedbutcherbot
+
+plugins:
+  - serverless-dynamodb-local
+  - serverless-offline
+
+custom:
+  config: ${file(.env.yml):${opt:stage, self:provider.stage}}
+  dynamodb:
+    stages:
+      - prod
+    start:
+      migrate: true
+      noStart: true
+provider:
+  name: aws
+#  name: yandex-cloud
+  runtime: nodejs12.x
+  stage: prod
+  region: us-east-1
+  memorySize: 128
+  timeout: 100
+  endpointType: regional
+  environment:
+    bot_token: ${self:custom.config.bot_token}
+    form_to_copy: ${self:custom.config.form_to_copy}
+    folder_where_to_store: ${self:custom.config.folder_where_to_store}
+    google_client_email: ${self:custom.config.google_client_email}
+    google_private_key: ${self:custom.config.google_private_key}
+    dynamodb_table: ${self:custom.config.dynamodb_table}
+    support_chat_id: ${self:custom.config.support_chat_id}
+    stars_answer_id: ${self:custom.config.stars_answer_id}
+    comments_answer_id: ${self:custom.config.comments_answer_id}
+    region: ${self:provider.region}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource: "arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.config.dynamodb_table}"
+functions:
+  telegramEventHandler:
+    handler: api/telegram.eventHandler
+    description: Handle events from telegram
+    events:
+      - http:
+          path: webhook
+          method: post
+          cors: true
+  formResponsesWebhookHandler:
+    handler: api/formResponsesWebhook.eventHandler
+    description: Handle events from google forms pub sub
+    events:
+      - http:
+          path: formResponsesWebhook
+          method: post
+          cors: true
+  evictAnswersCheck:
+    handler: api/newAnswersChecker.eventHandler
+    description: Check all forms for new answers
+    events:
+      - http:
+          path: evictAnswersCheck
+          method: post
+          cors: true
+resources:
+  Resources:
+    TgSlidesBot:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
+      Properties:
+        TableName: ${self:custom.config.dynamodb_table}
+        AttributeDefinitions:
+          - AttributeName: SessionKey
+            AttributeType: S
+        KeySchema:
+          - AttributeName: SessionKey
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TimeToLiveSpecification:
+          AttributeName: ttl
+          Enabled: true
